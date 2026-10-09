@@ -43,6 +43,9 @@ Check it with `curl https://<service>.onrender.com/healthz` → `{"ok":true}`.
 | `PORT` | `1234` | Render sets this itself. |
 | `ALLOWED_ORIGINS` | *(unset)* | Comma-separated origins allowed to call the API and open the WebSocket. Unset → only `localhost` and private-network pages (safe for local dev, closed in production). `*` → anyone. |
 | `DROP_HOSTED` | *(unset)* | `1` = deployed on a public host: `/drop` always uses internet mode and never offers the server's own addresses. Render's `RENDER=true` (set automatically) means the same. |
+| `KEEP_ALIVE` | on | `0` turns off the self-ping that keeps the free plan awake. |
+| `KEEP_ALIVE_URL` | `RENDER_EXTERNAL_URL` | Public URL to ping. Render sets `RENDER_EXTERNAL_URL` itself, so this is only for a custom domain. |
+| `KEEP_ALIVE_INTERVAL_MIN` | `5` | Minutes between pings (1–14). |
 | `TRUST_PROXY` | `1` | Reverse-proxy hops in front of the app, so client IPs (used for rate limiting and drop pairing) are read from `X-Forwarded-For`. Render's load balancer is one hop. |
 
 Disallowed origins get `403` on REST, SSE and the WebSocket upgrade alike.
@@ -54,8 +57,14 @@ Disallowed origins get `403` on REST, SSE and the WebSocket upgrade alike.
   see each other. Don't scale horizontally.
 - **Everything is ephemeral.** A restart or redeploy wipes every editor document.
   A room is dropped once nobody has been connected to it for 30 minutes.
-- **Free tier sleeps.** After ~15 minutes idle Render stops the service; the next
-  visitor waits ~30–60 s for a cold start, and any open documents are gone.
+- **Free tier sleep is prevented.** Render stops a free service after 15 minutes
+  without inbound traffic (cold start ~30–60 s, and every open document lost).
+  On Render the backend requests its own public `/ping` every 5 minutes, which
+  counts as inbound traffic, so it stays up. It can only keep an awake service
+  awake: after a crash or redeploy, the first visit wakes it and pinging resumes.
+  For belt and braces, point a free external monitor (UptimeRobot, cron-job.org)
+  at `https://<service>.onrender.com/ping` every 5 minutes. An always-on free
+  service uses ~744 of the plan's monthly instance hours.
 - **Drop on a hosted backend.** When the backend is on the public internet it
   can't see devices' private LAN addresses, so peers find each other through the
   browser's `.local` mDNS names. That works on most home WiFi; networks that

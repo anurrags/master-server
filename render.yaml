@@ -29,6 +29,9 @@ services:
       # also sets RENDER=true, which means the same; this keeps it explicit.
       - key: DROP_HOSTED
         value: "1"
+      # Keep-alive (src/keepAlive.ts) needs no setting: it pings
+      # RENDER_EXTERNAL_URL/ping every 5 min, which Render provides. Set
+      # KEEP_ALIVE=0 to turn it off.
       # Reverse-proxy hops in front of the app. Render's load balancer is one.
       - key: TRUST_PROXY
         value: "1"

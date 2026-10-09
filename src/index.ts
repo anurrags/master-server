@@ -8,6 +8,8 @@ import { api } from './api.ts'
 import { connectionCount, hocuspocus } from './collab.ts'
 import { closeDropStreams, dropSignal, startCodeSweeper } from './dropSignal.ts'
 import { isHostedDeployment, lanAddresses } from './drops.ts'
+import { clientIp } from './clientIp.ts'
+import { formatUptime, KEEP_ALIVE_USER_AGENT, keepAliveConfig, PING_PATH, startKeepAlive } from './keepAlive.ts'
 import { isAllowedOrigin, originPolicy, parseAllowedOrigins } from './origins.ts'
 import { startSweeper } from './rooms.ts'
 
@@ -39,6 +41,16 @@ app.set('trust proxy', TRUST_PROXY)
 
 app.get('/healthz', (_req, res) => {
   res.json({ ok: true })
+})
+
+// Keep-alive target for Render's free plan (see keepAlive.ts) or any external
+// pinger. Cheap and side-effect free; never cached, so every hit reaches us.
+app.get(PING_PATH, (req, res) => {
+  const uptimeSeconds = Math.round(process.uptime())
+  const caller = req.get('user-agent') === KEEP_ALIVE_USER_AGENT ? 'keep-alive' : `${clientIp(req)} (${req.get('user-agent') ?? 'no user-agent'})`
+  console.log(`[ping] ${new Date().toISOString()} from ${caller} — up ${formatUptime(uptimeSeconds)}`)
+  res.set('Cache-Control', 'no-store')
+  res.json({ ok: true, uptimeSeconds })
 })
 
 // Before everything else, so a disallowed origin is turned away before any
@@ -110,6 +122,8 @@ server.on('upgrade', (req, socket, head) => {
 
 startSweeper(connectionCount)
 startCodeSweeper()
+const keepAlive = keepAliveConfig()
+startKeepAlive(keepAlive)
 
 server.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code === 'EADDRINUSE') {
@@ -126,6 +140,7 @@ server.listen(PORT, HOST, () => {
   console.log(`  backend     http://localhost:${PORT}`)
   if (lan) console.log(`  on the LAN  http://${lan}:${PORT}`)
   console.log(`  websocket   ${COLLAB_PATH}`)
+  console.log(`  keep-alive  ${keepAlive ? `${keepAlive.url} every ${keepAlive.intervalMs / 60_000} min` : 'off'}`)
   console.log(
     `  drop        ${isHostedDeployment() ? 'hosted — internet mode, no LAN addresses advertised' : 'local — LAN mode for same-network clients'}`,
   )
