@@ -67,7 +67,23 @@ export function isLoopback(rawIp: string | undefined): boolean {
   return address === '::1' || /^127\./.test(address)
 }
 
-export function modeFor(rawIp: string | undefined): DropMode {
+/**
+ * Whether this server is deployed on a public host rather than on the user's
+ * own network. Render sets `RENDER=true` on every service; `DROP_HOSTED=1`
+ * says the same anywhere else.
+ *
+ * Hosted, the client address is no guide to the network: requests arrive
+ * through the host's proxies, which have private addresses of their own
+ * (10.x on Render), and would otherwise look like LAN clients.
+ */
+export function isHostedDeployment(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.DROP_HOSTED === '1' || env.RENDER === 'true'
+}
+
+export function modeFor(rawIp: string | undefined, hosted: boolean = isHostedDeployment()): DropMode {
+  // A hosted server is never on the user's network, whatever address the
+  // request appears to come from.
+  if (hosted) return 'internet'
   if (normaliseIp(rawIp)) return 'lan'
   // Loopback is not "the internet": the server is on this very machine, and it
   // knows LAN addresses the other device can actually reach.

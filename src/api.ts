@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Request, type Response } from 'express'
 import { hashPassword } from './auth.ts'
 import { createRoom, getRoom, roomCount } from './rooms.ts'
+import { clientIp } from './clientIp.ts'
 
 /**
  * The language is an opaque tag as far as the server is concerned — the client
@@ -19,7 +20,7 @@ const buckets = new Map<string, { count: number; resetAt: number }>()
 
 function rateLimitRoomCreation(req: Request, res: Response, next: NextFunction): void {
   const now = Date.now()
-  const key = req.ip ?? 'unknown'
+  const key = clientIp(req) || 'unknown'
 
   // Opportunistically drop expired buckets so the Map doesn't grow unbounded.
   if (buckets.size > 10_000) {

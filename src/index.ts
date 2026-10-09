@@ -7,7 +7,7 @@ import type { Hocuspocus, WebSocketLike } from '@hocuspocus/server'
 import { api } from './api.ts'
 import { connectionCount, hocuspocus } from './collab.ts'
 import { closeDropStreams, dropSignal, startCodeSweeper } from './dropSignal.ts'
-import { lanAddresses } from './drops.ts'
+import { isHostedDeployment, lanAddresses } from './drops.ts'
 import { isAllowedOrigin, originPolicy, parseAllowedOrigins } from './origins.ts'
 import { startSweeper } from './rooms.ts'
 
@@ -126,6 +126,9 @@ server.listen(PORT, HOST, () => {
   console.log(`  backend     http://localhost:${PORT}`)
   if (lan) console.log(`  on the LAN  http://${lan}:${PORT}`)
   console.log(`  websocket   ${COLLAB_PATH}`)
+  console.log(
+    `  drop        ${isHostedDeployment() ? 'hosted — internet mode, no LAN addresses advertised' : 'local — LAN mode for same-network clients'}`,
+  )
   console.log(
     `  origins     ${
       allowedOrigins === null

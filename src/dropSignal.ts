@@ -14,6 +14,7 @@ import {
   sanitiseName,
   type DropMode,
 } from './drops.ts'
+import { clientIp } from './clientIp.ts'
 
 /**
  * Signalling only.
@@ -80,7 +81,7 @@ type Context = {
 }
 
 function context(req: Request): Context {
-  const rawIp = req.ip ?? req.socket.remoteAddress ?? ''
+  const rawIp = clientIp(req)
   return {
     privateIp: normaliseIp(rawIp),
     rawIp,

@@ -21,9 +21,9 @@ npm test           # unit tests
 
 Node 22.12+ (TypeScript runs directly via Node's type stripping, no build step).
 
-The portfolio UI, run locally, finds this backend on port 1234 of whatever host
-the page was opened on — so `localhost:1234` from the laptop and
-`192.168.x.x:1234` from a phone on the same WiFi, with no configuration.
+You normally don't run this by hand: `npm start` in `portfolio-main` starts it
+in the background and serves it behind the portfolio's own port (3000), so the
+whole site is one address. If it is already running on 1234, that copy is used.
 
 ## Deploy on Render
 
@@ -42,6 +42,7 @@ Check it with `curl https://<service>.onrender.com/healthz` → `{"ok":true}`.
 |---|---|---|
 | `PORT` | `1234` | Render sets this itself. |
 | `ALLOWED_ORIGINS` | *(unset)* | Comma-separated origins allowed to call the API and open the WebSocket. Unset → only `localhost` and private-network pages (safe for local dev, closed in production). `*` → anyone. |
+| `DROP_HOSTED` | *(unset)* | `1` = deployed on a public host: `/drop` always uses internet mode and never offers the server's own addresses. Render's `RENDER=true` (set automatically) means the same. |
 | `TRUST_PROXY` | `1` | Reverse-proxy hops in front of the app, so client IPs (used for rate limiting and drop pairing) are read from `X-Forwarded-For`. Render's load balancer is one hop. |
 
 Disallowed origins get `403` on REST, SSE and the WebSocket upgrade alike.

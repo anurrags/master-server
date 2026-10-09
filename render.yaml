@@ -25,6 +25,10 @@ services:
       # work — deliberately closed by default rather than open.
       - key: ALLOWED_ORIGINS
         sync: false
+      # Hosted: never treat clients as being on this server's network. Render
+      # also sets RENDER=true, which means the same; this keeps it explicit.
+      - key: DROP_HOSTED
+        value: "1"
       # Reverse-proxy hops in front of the app. Render's load balancer is one.
       - key: TRUST_PROXY
         value: "1"

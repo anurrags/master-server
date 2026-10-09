@@ -9,6 +9,7 @@ import {
   iceServersFor,
   isCarrierNat,
   isPairingCode,
+  isHostedDeployment,
   modeFor,
   newPairingCode,
   normaliseIp,
@@ -116,6 +117,23 @@ describe('drops', () => {
     it('formats for reading aloud without altering the value', () => {
       assert.equal(formatCode('012345'), '012 345')
       assert.equal(formatCode('012345').replace(' ', ''), '012345')
+    })
+  })
+
+  describe('hosted deployment', () => {
+    it('is detected from RENDER or DROP_HOSTED', () => {
+      assert.equal(isHostedDeployment({ RENDER: 'true' }), true)
+      assert.equal(isHostedDeployment({ DROP_HOSTED: '1' }), true)
+      assert.equal(isHostedDeployment({}), false)
+    })
+
+    it('is always internet mode, even when the proxy in front has a private address', () => {
+      // The bug this guards: Render's proxies are 10.x, which looked like a LAN
+      // client, so the server advertised its own unreachable container address.
+      assert.equal(modeFor('10.25.147.215', true), 'internet')
+      assert.equal(modeFor('192.168.1.5', true), 'internet')
+      assert.equal(modeFor('127.0.0.1', true), 'internet')
+      assert.equal(shouldAdvertiseLan(modeFor('10.25.147.215', true)), false)
     })
   })
 
