@@ -1,0 +1,30 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# One web service. It must stay a single instance: editor documents, pairing
+# codes and connected peers all live in this process's memory, so a second
+# instance would split users into two worlds that can't see each other.
+
+services:
+  - type: web
+    name: portfolio-backend
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      # The node version also comes from .node-version; set here too so the
+      # dashboard shows it.
+      - key: NODE_VERSION
+        value: "24"
+      # Comma-separated origins allowed to use this backend — the portfolio's
+      # public URL(s), e.g. https://anurag.dev,https://www.anurag.dev
+      # Render prompts for this on first deploy. Until it is set, only
+      # localhost/private-network pages are allowed, so the deployed UI won't
+      # work — deliberately closed by default rather than open.
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Reverse-proxy hops in front of the app. Render's load balancer is one.
+      - key: TRUST_PROXY
+        value: "1"
